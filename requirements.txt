@@ -1,0 +1,9 @@
+
+torch
+torchvision
+transformers
+timm
+datasets
+Pillow
+tqdm
+pandas       # We'll use this to read the annotation CSV
