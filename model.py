@@ -8,6 +8,10 @@ import config
 
 """
 Here threee distinct classes are defined -> VisionEncoder, TextEncoder, QueryingBridge 
+VisionEncoder - DINO (Small ViT)  is used to generate the patch features. Patch features represent the rich analysis of the image.
+QueryBridge - Here the Patch features of the DINO model are processed into the final Image Embedding.
+            - A trainable Transformer Decoder layer with cross attention is added to understand the image and generate the Final Image Embedding
+TextEncoder - DistilBERT is used to generate the CLS token for the raw string. A trainable Linear Layer is added to downscale to the shared space embedding dimension
 """
 
 class VisionEncoder(nn.Module):
@@ -212,3 +216,4 @@ class QueryingBridge(nn.Module):
         final_image_embeddings = self.projection_head(image_summary)  # [N, 768] -> [N, 512]
         return final_image_embeddings
         
+
