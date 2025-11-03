@@ -13,8 +13,10 @@ from model import VisionEncoder, TextEncoder, QueryingBridge
 
 def compute_loss(image_embeds, text_embeds, logit_scale):
     """
-    Compute the contrastive loss between image and text embeddings.
-    Converts the logit scale to a scaling factor and calculates the cross-entropy loss.
+    # Compute the contrastive loss between image and text embeddings
+    # using cosine similarity and symmetric cross-entropy loss.
+    
+    # 
     
     """
     # Normalize the embeddings
@@ -41,6 +43,16 @@ def compute_loss(image_embeds, text_embeds, logit_scale):
 def train():
     """
     The main training code
+    FORWARD PASS:
+    1. Images are passed through the frozen vision encoder(DINO) to get patch features
+    2. The patch features are passed through the querying bridge to get the final image embeddings
+    3. Texts are passed through the frozen text encoder(BERT) to get text embeddings
+    4. Contrastive loss is computed between image and text embeddings
+    BACKWARD PASS:
+    1. Gradients are computed and scaled using GradScaler for mixed precision training
+    2. Optimizer updates the weights of the querying bridge and text projection head (only trainable parts, avoiding frozen models)
+    3. Checkpoints are saved after each epoch
+    
     """
     
     print("Start Training")    
@@ -91,7 +103,8 @@ def train():
             images = images.to(config.DEVICE)
             
             # FORWARD PASS
-            # use autocast for mixed precision -> speeds up training and reduces memory usage
+            # use autocast for mixed precision (float16) -> speeds up training and reduces memory usage
+            # 
             with autocast():
                 
                 # IMAGE
@@ -102,6 +115,8 @@ def train():
                 # TEXT
                 text_features = text_encoder(texts) 
                 
+                # LOSS COMPUTATION
+                # compute the contrastive loss between image and text embeddings
                 logit_scale = querying_bridge.logit_scale
                 loss = compute_loss(image_embeds, text_features, logit_scale)
                 
