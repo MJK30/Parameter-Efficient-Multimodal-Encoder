@@ -67,8 +67,8 @@ Project Structure
 
 .
 ├── checkpoints/         # Saved model weights will appear here
-├── data/                 # Your Flickr30k data should go here
-│   ├── flickr30k_images/
+├── data/                 # Your Flickr8k data should go here
+│   ├── flickr8k_images/
 │   └── results.csv
 ├── config.py             # Stores all hyperparameters and model paths
 ├── model.py              # Defines the VisionEncoder, TextEncoder, and QueryingBridge
