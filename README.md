@@ -1,21 +1,21 @@
 # Parameter-Efficient-Multimodal-Encoder
 
 
-This is a PyTorch project to build and train a light cross-attention fusion model for image-text embedding. It is designed from the ground up to be parameter-efficient and runnable on consumer-grade GPUs (6GB VRAM).
+Parameter-Efficient-Multimodal-Encoder is a PyTorch project for building and training a modern, cross-attention-based model for image-text embedding. The primary design goal is parameter-efficiency, allowing the entire training and experimentation pipeline to run on consumer-grade GPUs (approx. 6GB VRAM).
 
-Inspiration
+This project demonstrates how to connect powerful, pre-trained, and frozen unimodal encoders (for vision and text) using a small, trainable "bridge" module.
 
-This project began as an exploration of OpenAI's CLIP model, the foundational two-tower model for aligning images and text. However, CLIP's architecture, while powerful, trains a giant vision encoder from scratch, which is computationally massive.
+Core Idea & Inspiration
 
-The inspiration for this project came from more recent "Encoder-Bridge" or "Adapter" models, which ask a new question:
+This project is inspired by modern adapter-based multimodal architectures, which differ from the classic end-to-end training of models like CLIP.
 
-"Instead of training a giant model from scratch, can we take existing, pre-trained 'expert' models (for vision and text) and just train a tiny, lightweight 'bridge' to connect them?"
+Instead of training a giant model from scratch, this approach leverages the knowledge of pre-trained "expert" models. The core idea is based on models like BLIP-2, which use a "Q-Former" (a small transformer) to bridge the gap between a frozen vision encoder and a frozen language model.
 
-This is the core idea behind state-of-the-art models like BLIP-2, which uses a "Q-Former" to connect a frozen vision encoder to a frozen Large Language Model.
+Our model implements this "Encoder-Bridge" philosophy with a focus on efficiency, using Parameter-Efficient Fine-Tuning (PEFT) techniques.
 
 Model Architecture
 
-Our model is a "Two-Tower" design where the comparison only happens in the final loss function. However, the Image Tower is a sophisticated two-stage system.
+The model uses a two-tower design where image and text data are processed in parallel. The final embeddings are compared outside the model by the loss function. The key to this architecture is that the large encoders are frozen, and only the small adapter/bridge layers are trained.
 
 graph TD
     subgraph Image Tower (Tower 1)
@@ -26,7 +26,7 @@ graph TD
         D --> E[Image Embedding<br>[N, 512]];
     end
 
-    subgraph Text Tower (Tower 2)
+subgraph Text Tower (Tower 2)
         direction TB
         F[Text: ["a dog..."]] --> G(TextEncoder<br><b>Frozen DistilBERT</b>);
         G --> H[CLS Token<br>[N, 768]];
@@ -34,34 +34,34 @@ graph TD
         I --> J[Text Embedding<br>[N, 512]];
     end
 
-    subgraph Loss (Outside Model)
+subgraph Loss (Outside Model)
         direction LR
         E --> K{InfoNCE<br>Contrastive Loss};
         J --> K;
     end
 
 
-Frozen VisionEncoder (DINO): A pre-trained DINO ViT-Small model that acts as our "expert eye." It provides 197 patch-based "visual words" (384-dim).
+VisionEncoder (Frozen): A pre-trained DINO ViT-Small model. It takes an image and outputs 197 patch feature vectors (384-dim).
 
-Frozen TextEncoder (DistilBERT): A pre-trained DistilBERT model that acts as our "expert reader." It provides a single [CLS] token summary (768-dim).
+TextEncoder (Frozen): A pre-trained DistilBERT model. It takes raw text and outputs a single [CLS] token summary vector (768-dim).
 
-Trainable QueryingBridge: This is the "brain" of our project. This module (which includes cross-attention layers, learnable queries, and a projection head) learns to take DINO's 197 "visual words" and "summarize" them into a single 512-dim vector.
+QueryingBridge (Trainable): This is the main trainable module. It uses cross-attention to "query" the 197 patch vectors and fuse them into a single 512-dim summary vector.
 
-Trainable TextEncoder.projection_head: A tiny MLP that learns to "translate" DistilBERT's 768-dim summary into the same 512-dim shared space.
+TextEncoder.projection_head (Trainable): A small, trainable MLP that maps the 768-dim text summary to the final 512-dim embedding space.
 
-Training only involves updating the QueryingBridge and the TextEncoder.projection_head, leaving the 87M+ parameters of the expert encoders untouched.
+The training process only updates the QueryingBridge and the TextEncoder.projection_head, leaving the 87M+ parameters of the expert encoders frozen.
 
-✨ Key Features & Techniques
+Key Training Techniques
 
-This project runs on 6GB of VRAM thanks to a combination of modern techniques:
+This project is designed to run on 6GB of VRAM by using several key efficiency techniques:
 
 Parameter-Efficient Fine-Tuning (PEFT): Only a small fraction of the total parameters (the "bridge" and "projectors") are trained.
 
-Automatic Mixed Precision (AMP): torch.cuda.amp.autocast and GradScaler are used to cut memory usage nearly in half by using float16.
+Automatic Mixed Precision (AMP): torch.cuda.amp.autocast and GradScaler are used to cut memory usage by using float16.
 
-Gradient Accumulation: We simulate a large, stable effective batch size of 64 by accumulating gradients over 8 small "physical" batches of 8.
+Gradient Accumulation: Simulates a large, stable effective batch size of 64 from 8 small "physical" batches of 8.
 
-Targeted Optimizer: The AdamW optimizer is only given the trainable parameters, saving a massive amount of VRAM by not storing optimizer states for the frozen encoders.
+Targeted Optimizer: The AdamW optimizer is only given the trainable parameters, saving VRAM by not storing states for the frozen encoders.
 
 Project Structure
 
@@ -70,11 +70,14 @@ Project Structure
 ├── data/                 # Your Flickr30k data should go here
 │   ├── flickr30k_images/
 │   └── results.csv
-├── config.py             # The main control panel (model names, batch size, LR)
-├── model.py              # The 3 core nn.Module classes (VisionEncoder, TextEncoder, QueryingBridge)
-├── dataset.py            # The Flickr30k Dataset and DataLoader
+├── config.py             # Stores all hyperparameters and model paths
+├── model.py              # Defines the VisionEncoder, TextEncoder, and QueryingBridge
+├── dataset.py            # PyTorch Dataset and DataLoader for Flickr30k
 ├── transforms.py         # Image preprocessing transforms for DINO
 ├── train.py              # The main training script (Phase 3)
-├── eval.py               # The evaluation script (Phase 4)
-└── verify_memory.py      # The hardware validation script (Phase 1)
+
+
+
+
+DATA SOURCE - Flickr8k Images https://www.kaggle.com/datasets/adityajn105/flickr8k
 
