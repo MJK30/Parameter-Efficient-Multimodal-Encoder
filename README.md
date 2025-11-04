@@ -26,9 +26,9 @@ The model uses a two-tower design where image and text data are processed in par
 
 ### Text Tower (Tower 2)
 - F[Raw String] -> G(TextEncoder Frozen DistilBERT);
-- G --> H[CLS Token<br>[N, 768]];
+- G --> H[CLS Token [N, 768]];
 - H --> I[Projection Head - TRAINABLE];
-- I --> J[Text Embedding<br>[N, 512]];
+- I --> J[Text Embedding [N, 512]];
 
 
 - VisionEncoder (Frozen): A pre-trained DINO ViT-Small model. It takes an image and outputs 197 patch feature vectors (384-dim).
