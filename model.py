@@ -16,9 +16,9 @@ TextEncoder - DistilBERT is used to generate the CLS token for the raw string. A
 
 class VisionEncoder(nn.Module):
     """
-    The images are analysed using the DINO model.
+    The images are analysed using the DINO model(Small ViT).
     We use the frozen model to take a preprocessed image.
-    Here the output is the patch features of the image(This is not the final image embedding).
+    Here the output is the patch features of the image.
 
     Args:
         nn (_type_): _description_
@@ -216,4 +216,5 @@ class QueryingBridge(nn.Module):
         final_image_embeddings = self.projection_head(image_summary)  # [N, 768] -> [N, 512]
         return final_image_embeddings
         
+
 
