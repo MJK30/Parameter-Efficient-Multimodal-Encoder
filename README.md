@@ -19,16 +19,16 @@ The model uses a two-tower design where image and text data are processed in par
 
 
 ### Image Tower (Tower 1)
-A[Image: [N, 3, 224, 224]] -> BB(VisionEncoder<br><b>Frozen DINO ViT)
-B --> C[Patch Features [N, 197, 384]];
-C --> D[QueryingBridge];
-D --> E[Image Embedding[N, 512]];  
+- A[Image: [N, 3, 224, 224]] -> BB(VisionEncoder<br><b>Frozen DINO ViT)
+- B --> C[Patch Features [N, 197, 384]];
+- C --> D[QueryingBridge];
+- D --> E[Image Embedding[N, 512]];  
 
 ### Text Tower (Tower 2)
-F[Raw String] -> G(TextEncoder Frozen DistilBERT);
-G --> H[CLS Token<br>[N, 768]];
-H --> I[Projection Head - TRAINABLE];
-I --> J[Text Embedding<br>[N, 512]];
+- F[Raw String] -> G(TextEncoder Frozen DistilBERT);
+- G --> H[CLS Token<br>[N, 768]];
+- H --> I[Projection Head - TRAINABLE];
+- I --> J[Text Embedding<br>[N, 512]];
 
 
 - VisionEncoder (Frozen): A pre-trained DINO ViT-Small model. It takes an image and outputs 197 patch feature vectors (384-dim).
